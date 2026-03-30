@@ -1,0 +1,57 @@
+{
+  "permissions": {
+    "allow": ["Bash", "Read", "Write", "WebFetch"],
+    "deny": []
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"app/auth/|migrations/\" && echo \"BLOCKED: FROZEN zone — requires Dev Lead approval\" && exit 2 || exit 0'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git commit\" && cd backend && flake8 app/ && exit 0 || exit 0'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qiE \"rm -rf /|--force.*push.*main|DROP TABLE\" && echo \"BLOCKED: Dangerous command\" && exit 2 || exit 0'"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qiE \"fastapi|from fastapi\" && echo \"BLOCKED: Use Flask, not FastAPI — see CONSTITUTION.md\" && exit 2 || exit 0'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"\\.py$\" && black --quiet $(echo \"$CLAUDE_TOOL_INPUT\" | grep -oE \"[^ ]*\\.py\") 2>/dev/null || exit 0'"
+          }
+        ]
+      }
+    ]
+  }
+}
